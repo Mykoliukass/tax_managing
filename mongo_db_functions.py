@@ -13,6 +13,7 @@ from pymongo.errors import (
     ServerSelectionTimeoutError,
 )
 from typing import Dict, List, Optional, Union
+import click
 
 
 class MongoCRUD:
@@ -175,3 +176,42 @@ class MongoCRUD:
             return list(documents)
         except PyMongoError as err:
             print(f"An error occured: {err}")
+
+    @staticmethod
+    def find_between_static(
+        collection, key: str, min_value: int, max_value: int, parameters={}
+    ) -> Union[List[Dict], None]:
+        query = {key: {"$gte": min_value, "$lte": max_value}}
+        try:
+            documents = collection.find(query, parameters).limit(10)
+            return list(documents)
+        except PyMongoError as err:
+            print(f"An error occurred: {err}")
+
+    @staticmethod
+    @click.command()
+    @click.option(
+        "--min_age",
+        default=1,
+        prompt="Please provide minimum age",
+        help="Minimal age for search.",
+    )
+    @click.option(
+        "--max_age",
+        default=100,
+        prompt="Please provide maximum age",
+        help="Maximum age for search.",
+    )
+    def get_data_between_ages(
+        collection, key, min_age, max_age
+    ) -> Optional[List[Dict]]:
+        try:
+            min_value, max_value = int(min_age), int(max_age)
+            if min_value >= max_value:
+                print("Minimum age must be lower than maximum age. Please try again.")
+                return None
+            return MongoCRUD.find_between_static(collection, key, min_value, max_value)
+
+        except ValueError:
+            print("Please enter valid integer values for age.")
+            return None

@@ -1,6 +1,8 @@
 from mongo_db_functions import MongoCRUD
 import os
 import time
+from typing import List, Union
+import click
 
 # Create an income tax calculator:
 # - Generate at least 500 documents , with fields: name, surname, date of birth , age (determined from date of birth), anual salary before tax (EUR, round to 2 numbers after comma)
@@ -30,24 +32,18 @@ def calculate_tax_return(income):
 
 def main_menu() -> None:
     while True:
-        os.system("cls")
+        # os.system("cls")
         print("\n------------------\n|--TAX MANAGER--|\n------------------")
-        print("Please provide minimal age and maximum age for people you want to see:")
-        min_age = 0
-        max_age = 0
-        while True:
-            try:
-                min_age = int(input("Enter minimal age: "))
-                max_age = int(input("Enter maximal age: "))
-                if min_age >= max_age:
-                    print(
-                        "Minimum age must be lower than maximum age. Please try again."
-                    )
-                    continue
-                break
-            except ValueError:
-                print("Please enter valid integer values for age.")
-        documents = db.find_between("age", min_age, max_age)
+        min_age = click.prompt("Please provide minimum age", default=1, type=int)
+        max_age = click.prompt("Please provide maximum age", default=100, type=int)
+        try:
+            documents = MongoCRUD.get_data_between_ages(
+                db.collection, "age", min_age, max_age
+            )
+        except Exception as e:
+            print("Encountered an error: " + str(e))
+            continue
+
         for idx, document in enumerate(documents, 1):
             print(
                 f"{idx}. {document.get('name')} {document.get('surname')}, age {document.get('age')}"
